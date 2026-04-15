@@ -7,22 +7,25 @@ from datetime import datetime, timezone
 TG_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
 CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
 
+# 2025년 4월 기준 살아있는 Nitter 인스턴스
 NITTER_INSTANCES = [
-    "https://nitter.net",
-    "https://nitter.privacydev.net",
     "https://nitter.poast.org",
-    "https://nitter.1d4.us",
+    "https://nitter.cz",
+    "https://nitter.lucahammer.com",
+    "https://nitter.esmailelbob.xyz",
+    "https://nitter.rawbit.ninja",
 ]
 
 def get_username(url):
     return url.rstrip("/").split("/")[-1]
 
 def get_followers(username):
-    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
     for instance in NITTER_INSTANCES:
         try:
             r = requests.get(f"{instance}/{username}", headers=headers, timeout=10)
             if r.status_code != 200:
+                print(f"  [{instance}] status={r.status_code}")
                 continue
             soup = BeautifulSoup(r.text, "html.parser")
             for stat in soup.select(".profile-stat"):
@@ -36,6 +39,7 @@ def get_followers(username):
                     elif "K" in text:
                         return int(float(text.replace("K", "")) * 1_000)
                     return int(text)
+            print(f"  [{instance}] no followers element found")
         except Exception as e:
             print(f"  [{instance}] failed: {e}")
             continue
@@ -58,7 +62,7 @@ for t in targets:
     print(f"Checking @{username}...")
     count = get_followers(username)
     if count is None:
-        print(f"  -> crawl failed")
+        print(f"  -> crawl failed for @{username}")
         continue
     pct = count / target * 100
     print(f"  -> {count:,} / {target:,} ({pct:.2f}%)")
